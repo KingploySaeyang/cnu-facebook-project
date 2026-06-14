@@ -1,5 +1,6 @@
 {
-  "outputDirectory": "wwwroot",
+  "buildCommand": "dotnet publish -c Release -o release",
+  "outputDirectory": "release/wwwroot",
   "cleanUrls": true,
   "routes": [
     { "handle": "filesystem" },
