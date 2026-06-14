@@ -1,0 +1,395 @@
+/* ── Blazor validation ── */
+h1:focus { outline: none; }
+
+.valid.modified:not([type=checkbox]) { outline: 1px solid #26b050; }
+.invalid { outline: 1px solid #e50000; }
+.validation-message { color: #e50000; }
+
+.blazor-error-boundary {
+    background: #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+.blazor-error-boundary::after { content: "An error has occurred."; }
+
+.darker-border-checkbox.form-check-input { border-color: #929292; }
+
+/* ── Page card ── */
+.page-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 24px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 500px;
+}
+
+.page-card-body {
+    padding: 36px 32px;
+}
+
+/* ── Text ── */
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 4px;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #888;
+    margin-bottom: 0;
+}
+
+/* ── Green primary button ── */
+.btn-next {
+    background-color: #34C759;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 48px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.btn-next:hover:not(:disabled) {
+    background-color: #2DB04D;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-next:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ── Facebook blue button ── */
+.btn-facebook {
+    background-color: #1877F2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.15s;
+    min-width: 230px;
+    justify-content: center;
+}
+
+.btn-facebook:hover:not(:disabled) {
+    background-color: #0d65d9;
+    color: white;
+}
+
+.btn-facebook:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Page list item ── */
+.page-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.page-list-item:last-child { border-bottom: none; }
+
+.page-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+/* ── Avatar ── */
+.page-avatar-wrapper {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+}
+
+.page-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #e0e0e0;
+}
+
+.fb-badge {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 16px;
+    height: 16px;
+    background-color: #1877F2;
+    border-radius: 50%;
+    border: 2px solid white;
+    display: block;
+}
+
+.page-avatar-placeholder {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background-color: #5B2D8A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.page-name {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #222;
+}
+
+/* ── Toggle switch size ── */
+.form-check.form-switch .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    cursor: pointer;
+}
+
+/* ── Status badge ── */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.9rem;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+.status-badge.on  { background-color: #d4edda; color: #155724; }
+.status-badge.off { background-color: #f8d7da; color: #721c24; }
+
+/* ── Small outline button (ตั้งค่า AI / ยกเลิก) ── */
+.btn-outline-sm {
+    background: transparent;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-outline-sm:hover:not(:disabled) {
+    background-color: #f0f0f0;
+    border-color: #aaa;
+}
+
+.btn-outline-sm.active {
+    background-color: #ede8f5;
+    border-color: #5B2D8A;
+    color: #5B2D8A;
+}
+
+.btn-outline-sm.danger {
+    color: #dc3545;
+    border-color: #f5c6cb;
+}
+
+.btn-outline-sm.danger:hover:not(:disabled) {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+}
+
+.btn-outline-sm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Save PrompSet button ── */
+.btn-save-sm {
+    background-color: #5B2D8A;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.15s;
+}
+
+.btn-save-sm:hover:not(:disabled) { background-color: #4a2370; }
+.btn-save-sm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── PrompSet edit box ── */
+.promp-edit-box {
+    background-color: #f9f6fd;
+    border: 1px solid #e0d4f5;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+/* ── Admin token table page ── */
+.admin-wrapper {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 24px rgba(0, 0, 0, 0.08);
+    padding: 28px 32px;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    align-self: flex-start;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.record-count {
+    text-align: right;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.admin-table thead tr {
+    background-color: #f4f1fb;
+}
+
+.admin-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #5B2D8A;
+    white-space: nowrap;
+    border-bottom: 2px solid #e0d4f5;
+}
+
+.admin-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+    color: #333;
+}
+
+.admin-table tbody tr:hover {
+    background-color: #faf8fe;
+}
+
+.admin-table .col-id    { width: 50px; font-weight: 600; color: #5B2D8A; }
+.admin-table .col-name  { min-width: 130px; font-weight: 500; }
+.admin-table .col-pageid { font-size: 0.75rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-table .col-token { max-width: 160px; }
+.admin-table .col-date  { white-space: nowrap; }
+.admin-table .col-time  { white-space: nowrap; }
+
+.token-text {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #666;
+    cursor: default;
+}
+
+/* ── Typography system (Sarabun) ── */
+body {
+    font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #1f2937;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Dashboard table ── */
+.table {
+    font-size: 15px;
+}
+
+.table thead th {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 13px 16px;
+}
+
+.table tbody td {
+    font-size: 15px;
+    font-weight: 500;
+    padding: 14px 16px;
+    color: #1f2937;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Form controls ── */
+.form-control {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 15px;
+    color: #374151;
+}
+
+.form-control::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.input-group-text {
+    font-family: 'Sarabun', sans-serif;
+}
+
+/* ── Buttons ── */
+.btn {
+    font-family: 'Sarabun', sans-serif;
+}
+
+.btn-primary {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* ── Select ── */
+.form-select {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+}
