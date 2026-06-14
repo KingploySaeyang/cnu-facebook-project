@@ -1,0 +1,639 @@
+@page "/dashboard"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpFactory
+
+<div class="w-100 p-4 mt-0 pt-0">
+    <div class="card rounded-3 p-4 shadow-sm border-0 bg-white w-100">
+
+        @* --- หัวข้อรายการและปุ่มรีเฟรช --- *@
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <h5 class="fw-bold text-dark mb-1">รายการ AccessToken Facebook</h5>
+            </div>
+            
+            <button class="btn btn-outline-secondary btn-sm px-3 py-1 rounded-2 d-flex align-items-center gap-2"
+                    @onclick="LoadData"
+                    disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                }
+                else
+                {
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                    </svg>
+                    <span>รีเฟรช</span>
+                }
+            </button>
+        </div>
+
+        @* --- กล่องค้นหา 2 ช่อง --- *@
+        <div class="p-4 bg-light rounded-3 border mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-5">
+                    <label class="form-label text-secondary small fw-bold mb-1">ชื่อเพจ</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 rounded-start-2 text-muted">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                        </span>
+                        <input type="text"
+                               class="form-control border-start-0 rounded-end-2 py-2"
+                               placeholder="พิมพ์เพื่อค้นหาชื่อเพจ..."
+                               list="pageNameList"
+                               value="@searchPageName"
+                               @oninput="OnPageNameInput" />
+                    </div>
+                    <datalist id="pageNameList">
+                        @foreach (var name in availablePageNames)
+                        {
+                            <option value="@name"></option>
+                        }
+                    </datalist>
+                </div>
+
+                <div class="col-12 col-md-5">
+                    <label class="form-label text-secondary small fw-bold mb-1">ชื่อผู้สร้างเพจ (User ID)</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0 rounded-start-2 text-muted">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                        </span>
+                        <input type="text"
+                               class="form-control border-start-0 rounded-end-2 py-2"
+                               placeholder="พิมพ์เพื่อค้นหาชื่อผู้สร้าง..."
+                               list="userIdList"
+                               value="@searchUserID"
+                               @oninput="OnUserIDInput" />
+                    </div>
+                    <datalist id="userIdList">
+                        @foreach (var id in availableUserIDs)
+                        {
+                            <option value="@id"></option>
+                        }
+                    </datalist>
+                </div>
+
+                @* ปุ่ม ค้นหา (ชื่อเพจ / ชื่อผู้สร้างเพจ (User ID)) *@
+                <div class="col-12 col-md-2">
+                    <button class="btn btn-primary btn-sm w-100 py-2 fw-bold rounded-2 shadow-sm"
+                            @onclick="ExecuteSearch"
+                            disabled="@isLoading">
+                        <span>ค้นหา</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @* --- สถานะโหลด / error / ว่าง / ตาราง --- *@
+         @if (isLoading) @* กรณีโหลดข้อมูลอยู่ *@
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2 small">กำลังสืบค้นข้อมูลในระบบ...</p>
+            </div>
+        }
+         else if (!string.IsNullOrEmpty(errorMessage)) @* กรณีเกิดข้อผิดพลาดด *@
+        {
+            <div class="alert alert-danger rounded-2 small p-3 mb-4" role="alert">@errorMessage</div>
+        }
+        else if (tokens.Count == 0)
+        {
+            <div class="text-center py-5 text-muted small">
+                <p>ไม่พบข้อมูลการบันทึกในระบบ</p>
+            </div>
+        }
+         else @* กรณีมีข้อมูล ไม่ผิดพลาด *@
+        {
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="small text-muted">
+                    ทั้งหมด <span class="fw-bold" style="color: #6d28d9;">@tokens.Count</span> รายการ
+                    &nbsp;|&nbsp; แสดง
+                    <select class="form-select form-select-sm d-inline-block w-auto ms-1 py-0" style="font-size:0.8rem;"
+                            @onchange="OnPageSizeChanged">
+                        <option value="10" selected="@(pageSize==10)">10</option>
+                        <option value="20" selected="@(pageSize==20)">20</option>
+                        <option value="50" selected="@(pageSize==50)">50</option>
+                    </select>
+                    รายการต่อหน้า
+                </div>
+                <div class="small text-muted">
+                    หน้า @currentPage / @totalPages
+                </div>
+            </div>
+
+            <div class="table-responsive rounded-3 border">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="dashboard-thead">
+                            <th style="width:70px;">ID</th>
+                            <th>PageName</th>
+                            <th>UserID</th>
+                            <th class="text-center" style="width:64px;">แก้ไข</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in pagedTokens)
+                        {
+                            <tr>
+                                <td style="font-size:13px; color:#9ca3af;">@t.Id</td>
+                                <td class="fw-semibold text-dark">@t.PageName</td>
+                                <td class="font-monospace" style="color:#4f46e5; font-size:14px;">@(string.IsNullOrWhiteSpace(t.CreateUserId) ? "—" : t.CreateUserId)</td>
+                                <td class="p-3 text-center">
+                                    <button class="btn btn-sm btn-edit-icon rounded-2 p-2"
+                                            title="แก้ไขชื่อเพจ"
+                                            @onclick="() => StartEdit(t.Id, t.PageName)">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (totalPages > 1)
+            {
+                <div class="d-flex justify-content-center align-items-center gap-1 mt-3">
+                    <button class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1"
+                            disabled="@(currentPage == 1)"
+                            @onclick="() => GoToPage(currentPage - 1)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M15 18l-6-6 6-6"/>
+                        </svg>
+                    </button>
+
+                    @foreach (var p in pageNumbers)
+                    {
+                        @if (p == -1)
+                        {
+                            <span class="px-1 text-muted small">…</span>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm rounded-2 px-3 py-1 @(p == currentPage ? "btn-purple-active" : "btn-outline-secondary")"
+                                    @onclick="() => GoToPage(p)">
+                                @p
+                            </button>
+                        }
+                    }
+
+                    <button class="btn btn-sm btn-outline-secondary rounded-2 px-2 py-1"
+                            disabled="@(currentPage == totalPages)"
+                            @onclick="() => GoToPage(currentPage + 1)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@* --- Modal Dialog --- *@
+@if (showModal)
+{
+    <div class="modal-overlay" @onclick="CloseModal">
+        <div class="modal-box" @onclick:stopPropagation="true">
+
+            @* ไอคอน *@
+                <div class="modal-icon @modalIconClass">
+                @if (modalType == "success")
+                {
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5">
+                        <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                }
+                else if (modalType == "error")
+                {
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                }
+                else if (modalType == "warning")
+                {
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5">
+                        <path d="M12 9v4M12 17h.01" />
+                        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                }
+                else
+                {
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v4M12 16h.01" />
+                    </svg>
+                }
+            </div>
+
+            @* ข้อความ *@
+                <h5 class="modal-title">@modalTitle</h5>
+            <p class="modal-subtitle">@modalMessage</p>
+
+            @* ปุ่ม *@
+                <div class="modal-actions">
+                @if (modalType == "warning")
+                {
+                    <button class="modal-btn-cancel" @onclick="CloseModal">ยกเลิก</button>
+                    <button class="modal-btn-confirm warning" @onclick="ConfirmModal">ยืนยัน</button>
+                }
+                else
+                {
+                    <button class="modal-btn-confirm @modalType" @onclick="CloseModal">ตกลง</button>
+                }
+            </div>
+
+        </div>
+    </div>
+}
+
+<style>
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: overlayIn 0.2s ease;
+    }
+    .modal-box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 28px 28px 24px;
+        width: 100%;
+        max-width: 360px;
+        text-align: center;
+        animation: boxIn 0.25s ease;
+    }
+    .modal-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+    }
+    .modal-icon.success { background: #dcfce7; color: #16a34a; }
+    .modal-icon.error   { background: #fee2e2; color: #dc2626; }
+    .modal-icon.warning { background: #fef3c7; color: #d97706; }
+    .modal-icon.info    { background: #dbeafe; color: #2563eb; }
+    .modal-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 8px;
+    }
+    .modal-subtitle {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0 0 20px;
+        line-height: 1.5;
+    }
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+    .modal-btn-confirm {
+        padding: 9px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        color: #fff;
+        min-width: 100px;
+    }
+    .modal-btn-confirm.success { background: #16a34a; }
+    .modal-btn-confirm.error   { background: #dc2626; }
+    .modal-btn-confirm.warning { background: #d97706; }
+    .modal-btn-confirm.info    { background: #2563eb; }
+    .modal-btn-cancel {
+        padding: 9px 24px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        background: #fff;
+        color: #374151;
+        min-width: 100px;
+    }
+    @@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+    @@keyframes boxIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+    .dashboard-thead th {
+        background-color: #f9f5ff;
+        color: #5b21b6;
+        border-bottom: 2px solid #ede9fe;
+    }
+    .btn-edit-icon {
+        background: #f5f3ff;
+        border: 1px solid #ddd6fe;
+        color: #7c3aed;
+        line-height: 1;
+        transition: background 0.15s, color 0.15s;
+    }
+    .btn-edit-icon:hover {
+        background: #ede9fe;
+        border-color: #7c3aed;
+        color: #5b21b6;
+    }
+    .btn-purple-active {
+        background: #7c3aed;
+        border-color: #7c3aed;
+        color: #fff;
+        font-weight: 500;
+    }
+    .btn-purple-active:hover {
+        background: #6d28d9;
+        border-color: #6d28d9;
+        color: #fff;
+    }
+</style>
+
+@* --- Modal แก้ไขชื่อเพจ --- *@
+@if (editingId > 0)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-3 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold text-dark">✏️ แก้ไขชื่อเพจ</h6>
+                     <button type="button" class="btn-close" @onclick="CancelEdit" disabled="@isSaving"></button> @* กากบาท *@
+                </div>
+                <div class="modal-body pt-2">
+                    <label class="form-label text-secondary small fw-bold">ชื่อเพจ</label>
+                    <input class="form-control rounded-2"
+                           style="border-color: #8b5cf6;"
+                           @bind="editPageName"
+                           @bind:event="oninput"
+                           placeholder="กรอกชื่อเพจ..." />
+
+                    @if (!string.IsNullOrEmpty(saveError))
+                    {
+                        <div class="alert alert-danger rounded-2 p-2 small mt-2 mb-0">@saveError</div>
+                    }
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button class="btn btn-secondary btn-sm px-3 rounded-2"
+                            @onclick="CancelEdit"
+                            disabled="@isSaving">ยกเลิก</button>
+                    <button class="btn btn-success btn-sm px-3 rounded-2"
+                            @onclick="() => SavePageName(editingId)"
+                            disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        บันทึก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "fbUserId")]
+    public string? FbUserId { get; set; }
+
+    private List<TokenRow> allTokens = new();
+    private List<TokenRow> tokens    = new();
+    private bool   isLoading     = true;
+    private string errorMessage  = "";
+
+    private long   editingId    = 0;
+    private string editPageName = "";
+    private bool   isSaving     = false;
+    private string saveError    = "";
+    private string searchPageName = "";
+    private string searchUserID   = "";
+
+    private int currentPage = 1;
+    private int pageSize    = 10;
+
+    private int totalPages => tokens.Count == 0 ? 1 : (int)Math.Ceiling(tokens.Count / (double)pageSize);
+
+    private IEnumerable<TokenRow> pagedTokens =>
+        tokens.Skip((currentPage - 1) * pageSize).Take(pageSize);
+
+    private IEnumerable<int> pageNumbers
+    {
+        get
+        {
+            var pages = new List<int>();
+            for (int i = 1; i <= totalPages; i++)
+            {
+                if (i == 1 || i == totalPages || Math.Abs(i - currentPage) <= 1)
+                    pages.Add(i);
+                else if (pages.LastOrDefault() != -1)
+                    pages.Add(-1);
+            }
+            return pages;
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        currentPage = Math.Clamp(page, 1, totalPages);
+    }
+
+    private void OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size))
+        {
+            pageSize    = size;
+            currentPage = 1;
+        }
+    }
+
+    private bool   showModal    = false;
+    private string modalType     = "success"; // success | error | warning | info
+    private string modalTitle    = "";
+    private string modalMessage  = "";
+    private string modalIconClass => modalType;
+    private Func<Task>? modalConfirmAction;
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        errorMessage = "";
+
+        // เคลียค่าช่องค้นหา
+        searchPageName = string.Empty;
+        searchUserID = string.Empty;
+
+        StateHasChanged(); //อัปเดตการแสดงผลทันที
+
+        try
+        {
+            var http = HttpFactory.CreateClient("CnuConnectAPI");
+            var res = await http.GetAsync("api/ApiFacebookCnu/GetAllFacebookTokens");
+
+            if (res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadAsStringAsync();
+                allTokens = System.Text.Json.JsonSerializer.Deserialize<List<TokenRow>>(
+                    body,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                ) ?? new();
+                tokens = allTokens.ToList();
+                currentPage = 1;
+            }
+            else
+            {
+                errorMessage = "ไม่สามารถโหลดข้อมูลได้ (HTTP " + (int)res.StatusCode + ")";
+            }
+        }
+        catch
+        {
+            errorMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OnPageNameInput(ChangeEventArgs e) => searchPageName = e.Value?.ToString() ?? "";
+    private void OnUserIDInput(ChangeEventArgs e)   => searchUserID   = e.Value?.ToString() ?? "";
+
+    private void ExecuteSearch()
+    {
+        tokens = allTokens
+            .Where(t =>
+                (string.IsNullOrWhiteSpace(searchPageName) ||
+                 t.PageName.Contains(searchPageName, StringComparison.OrdinalIgnoreCase))
+                &&
+                (string.IsNullOrWhiteSpace(searchUserID) ||
+                 t.CreateUserId == searchUserID)
+            )
+            .ToList();
+        currentPage = 1;
+    }
+
+    private IEnumerable<string> availablePageNames => allTokens
+        .Where(t => !string.IsNullOrWhiteSpace(t.PageName))
+        .Select(t => t.PageName)
+        .Distinct()
+        .OrderBy(x => x);
+
+    private IEnumerable<string> availableUserIDs => allTokens
+        .Where(t => !string.IsNullOrWhiteSpace(t.CreateUserId))
+        .Select(t => t.CreateUserId!)
+        .Distinct()
+        .OrderBy(x => x);
+
+    private void StartEdit(long id, string currentName)
+    {
+        editingId    = id;
+        editPageName = currentName;
+        saveError    = "";
+    }
+
+    private void CancelEdit()
+    {
+        editingId    = 0;
+        editPageName = "";
+        saveError    = "";
+    }
+
+    private async Task SavePageName(long id)
+    {
+        if (string.IsNullOrWhiteSpace(editPageName)) return;
+
+        isSaving  = true;
+        saveError = "";
+        StateHasChanged();
+
+        try
+        {
+            var http    = HttpFactory.CreateClient("CnuConnectAPI");
+            var payload = new List<object> { new { ID = id.ToString(), PageName = editPageName, CreateUserID = "" } };
+            var res     = await http.PostAsJsonAsync("api/ApiFacebookCnu/OnUpdateFacebookToken", payload);
+
+            if (res.IsSuccessStatusCode)
+            {
+                var row = allTokens.FirstOrDefault(t => t.Id == id);
+                if (row != null)
+                {
+                    var now  = DateTime.Now;
+                    row.PageName   = editPageName;
+                    row.UpdateDate = now.ToString("yyyy-MM-dd");
+                    row.UpdateTime = now.ToString("HH:mm:ss");
+                    ShowModal("success", "บันทึกสำเร็จ", "บันทึกชื่อเพจสำเร็จแล้ว");
+                }
+                else
+                {
+                    ShowModal("info", "บันทึกสำเร็จ", "ระบบบันทึกข้อมูลแล้ว กรุณารีเฟรชหน้าเว็บเพื่ออัปเดตแสดงผลล่าสุด");
+                }
+                CancelEdit(); 
+                ExecuteSearch();
+            }
+            else
+            {
+                var body  = await res.Content.ReadAsStringAsync();
+                saveError = "บันทึกไม่สำเร็จ (HTTP " + (int)res.StatusCode + "): " + body;
+            }
+        }
+        catch
+        {
+            saveError = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void ShowModal(string type, string title, string message, Func<Task>? onConfirm = null)
+    {
+        modalType          = type;
+        modalTitle         = title;
+        modalMessage       = message;
+        modalConfirmAction = onConfirm;
+        showModal          = true;
+    }
+
+    private void CloseModal() => showModal = false;
+
+    private async Task ConfirmModal()
+    {
+        showModal = false;
+        if (modalConfirmAction != null)
+            await modalConfirmAction();
+    }
+
+    // private static string TrimDate(string s) =>
+    //     s.Length >= 10 ? s[..10] : s;
+
+    private class TokenRow
+    {
+        public long    Id           { get; set; }
+        public string  PageId       { get; set; } = "";
+        public string  PageName     { get; set; } = "";
+        public string? CreateUserId { get; set; }
+        public string  CreateDate   { get; set; } = "";
+        public string  CreateTime   { get; set; } = "";
+        public string? UpdateUserId { get; set; }
+        public string  UpdateDate   { get; set; } = "";
+        public string  UpdateTime   { get; set; } = "";
+        public string  CreatorName  { get; set; } = "";
+    }
+}

@@ -1,0 +1,84 @@
+@page "/connect"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject IHttpClientFactory HttpFactory
+@inject IJSRuntime JS
+
+<div class="page-card">
+    <div class="page-card-body">
+        <div class="text-center mb-4">
+            <h5 class="page-title">กรุณากดปุ่มด้านล่างเพื่อเชื่อมต่อกับ Facebook</h5>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger py-2 small mb-3" role="alert">@errorMessage</div>
+        }
+
+        <div class="d-flex justify-content-center mb-4">
+            <button class="btn-facebook" @onclick="LoginWithFacebook" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                    <span>กำลังโหลด...</span>
+                }
+                else
+                {
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                    <span>Log in with Facebook</span>
+                }
+            </button>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="/" class="text-muted text-decoration-none small">&larr; ย้อนกลับ</a>
+            @*<button class="btn-next" @onclick="LoginWithFacebook" disabled="@isLoading">*@
+            <button class="btn-next" @onclick='() => Nav.NavigateTo("/select-pages")'>    
+            ถัดไป &gt;
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = false;
+    private string errorMessage = "";
+    // login ด้วย Facebook จะเปิดหน้าต่างใหม่ขึ้นมา
+    private async Task LoginWithFacebook()
+    {
+        isLoading = true;
+        errorMessage = "";
+        StateHasChanged();// อัปเดต UI ทันทีเพื่อแสดงสถานะกำลังโหลด
+
+        try
+        {
+            // เรียก API เพื่อดึง URL สำหรับ Login กับ Facebook
+            var http = HttpFactory.CreateClient("BackendAPI");
+            // เรียก API ที่ Backend เพื่อขอ URL สำหรับ Login กับ Facebook
+            var res = await http.GetAsync("api/cnufacebook/GetFacebookLoginUrl");
+
+            if (res.IsSuccessStatusCode)
+            {
+                // ดึง URL จาก response และเปิดหน้าต่างใหม่เพื่อให้ผู้ใช้ทำการ Login กับ Facebook
+                var body = await res.Content.ReadAsStringAsync();
+                var doc = System.Text.Json.JsonDocument.Parse(body);
+                string loginUrl = doc.RootElement.GetProperty("loginUrl").GetString()!;
+                await JS.InvokeVoidAsync("open", loginUrl, "_blank", "width=700,height=600,left=400,top=100");
+            }
+            else
+            {
+                errorMessage = "ไม่สามารถสร้าง URL สำหรับ Login ได้ กรุณาลองใหม่";
+            }
+        }
+        catch
+        {
+            errorMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

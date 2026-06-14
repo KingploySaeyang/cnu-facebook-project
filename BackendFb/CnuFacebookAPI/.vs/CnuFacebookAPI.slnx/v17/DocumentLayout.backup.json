@@ -1,0 +1,74 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\FacebookCNU\\BackendFb\\CnuFacebookAPI\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AD9B5436-7D09-56FC-3498-4108DB555453}|CnuFacebookAPI\\CnuFacebookAPI.csproj|d:\\facebookcnu\\backendfb\\cnufacebookapi\\cnufacebookapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{AD9B5436-7D09-56FC-3498-4108DB555453}|CnuFacebookAPI\\CnuFacebookAPI.csproj|solutionrelative:cnufacebookapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD9B5436-7D09-56FC-3498-4108DB555453}|CnuFacebookAPI\\CnuFacebookAPI.csproj|d:\\facebookcnu\\backendfb\\cnufacebookapi\\cnufacebookapi\\controllers\\cnufacebookcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD9B5436-7D09-56FC-3498-4108DB555453}|CnuFacebookAPI\\CnuFacebookAPI.csproj|solutionrelative:cnufacebookapi\\controllers\\cnufacebookcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AD9B5436-7D09-56FC-3498-4108DB555453}|CnuFacebookAPI\\CnuFacebookAPI.csproj|d:\\facebookcnu\\backendfb\\cnufacebookapi\\cnufacebookapi\\controllers\\privacycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AD9B5436-7D09-56FC-3498-4108DB555453}|CnuFacebookAPI\\CnuFacebookAPI.csproj|solutionrelative:cnufacebookapi\\controllers\\privacycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\FacebookCNU\\BackendFb\\CnuFacebookAPI\\CnuFacebookAPI\\appsettings.json",
+              "RelativeDocumentMoniker": "CnuFacebookAPI\\appsettings.json",
+              "ToolTip": "D:\\FacebookCNU\\BackendFb\\CnuFacebookAPI\\CnuFacebookAPI\\appsettings.json",
+              "RelativeToolTip": "CnuFacebookAPI\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAABdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-06-13T06:41:56.965Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "PrivacyController.cs",
+              "DocumentMoniker": "D:\\FacebookCNU\\BackendFb\\CnuFacebookAPI\\CnuFacebookAPI\\Controllers\\PrivacyController.cs",
+              "RelativeDocumentMoniker": "CnuFacebookAPI\\Controllers\\PrivacyController.cs",
+              "ToolTip": "D:\\FacebookCNU\\BackendFb\\CnuFacebookAPI\\CnuFacebookAPI\\Controllers\\PrivacyController.cs",
+              "RelativeToolTip": "CnuFacebookAPI\\Controllers\\PrivacyController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-29T07:14:06.777Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CnuFacebookController.cs",
+              "DocumentMoniker": "D:\\FacebookCNU\\BackendFb\\CnuFacebookAPI\\CnuFacebookAPI\\Controllers\\CnuFacebookController.cs",
+              "RelativeDocumentMoniker": "CnuFacebookAPI\\Controllers\\CnuFacebookController.cs",
+              "ToolTip": "D:\\FacebookCNU\\BackendFb\\CnuFacebookAPI\\CnuFacebookAPI\\Controllers\\CnuFacebookController.cs",
+              "RelativeToolTip": "CnuFacebookAPI\\Controllers\\CnuFacebookController.cs",
+              "ViewState": "AgIAAKsAAAAAAAAAAAAAAM0AAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-29T02:08:04.323Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

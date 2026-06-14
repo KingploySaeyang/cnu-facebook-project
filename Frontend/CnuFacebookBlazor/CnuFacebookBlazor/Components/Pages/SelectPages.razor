@@ -1,0 +1,335 @@
+@page "/select-pages"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject IHttpClientFactory HttpFactory
+
+<div class="page-card">
+    <div class="page-card-body">
+        <div class="text-center mb-3">
+            <h5 class="page-title">กรุณาเลือกเพจที่ต้องการเชื่อมต่อ</h5>
+            <p class="page-subtitle">สามารถใช้งานได้หลายเพจ โดยไม่มีค่าบริการเพิ่มเติม</p>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-secondary" role="status"></div>
+                <p class="text-muted mt-2 small">กำลังโหลดรายการเพจ...</p>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger small" role="alert">@errorMessage</div>
+            <div class="text-center mt-3">
+                <a href="/" class="btn-next">กลับหน้าหลัก</a>
+            </div>
+        }
+        else
+        {
+            <div class="page-list-item">
+                <div class="page-info">
+                    <span class="page-name fw-semibold">เลือกทั้งหมด</span>
+                </div>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           role="switch"
+                           checked="@allSelected"
+                           @onchange="ToggleAll" />
+                </div>
+            </div>
+            
+            @foreach (var page in pages)
+            {
+                <div class="page-list-item">
+                    <div class="page-info">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   role="switch"
+                                   @bind="page.IsSelected" />
+                        </div>
+                        <span class="page-name">@(page.PageName)</span>
+                    </div>
+                    <div class="page-avatar-wrapper">
+                        @if (!string.IsNullOrEmpty(page.PictureUrl))
+                        {
+                            <img src="@(page.PictureUrl)" class="page-avatar" alt="@(page.PageName)" />
+                        }
+                        else
+                        {
+                            <div class="page-avatar-placeholder">
+                                @(page.PageName.Length > 0 ? page.PageName[0].ToString().ToUpper() : "P")
+                            </div>
+                        }
+                        <span class="fb-badge"></span>
+                    </div>
+                </div>
+            }
+
+            @if (pages.Count == 0)
+            {
+                <p class="text-center text-muted py-3 small">ไม่พบเพจที่คุณเป็นผู้ดูแล</p>
+            }
+
+            @* <div class="mt-4">
+                <label class="form-label small fw-semibold text-secondary">บุคลิก AI (ไม่บังคับ)</label>
+                <textarea class="form-control form-control-sm"
+                          rows="3"
+                          placeholder="เช่น: คุณเป็น AI ผู้ช่วยของร้านค้า ตอบกลับลูกค้าด้วยความสุภาพและเป็นมิตร..."
+                          @bind="promoSet"></textarea>
+                <div class="form-text">ข้อความนี้จะกำหนดบุคลิกของ AI เมื่อตอบกลับข้อความ</div>
+            </div> *@
+            
+            @if (!string.IsNullOrEmpty(saveError))
+            {
+                <div class="alert alert-danger small mt-3" role="alert">@saveError</div>
+            }
+
+            <div class="d-flex justify-content-center mt-4">
+                <button class="btn-next"
+                        @onclick="SavePages"
+                        disabled="@(isSaving || !pages.Any(p => p.IsSelected))">
+                    @if (isSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                        <span>กำลังบันทึก...</span>
+                    }
+                    else
+                    {
+                        <span>ถัดไป &gt;</span>
+                    }
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // รับค่า session และ error จากการเชื่อมต่อ Facebook ผ่าน query string
+    [SupplyParameterFromQuery(Name = "fb_session")]
+    public string? FbSession { get; set; }
+
+    [SupplyParameterFromQuery(Name = "fb_error")]
+    public string? FbError { get; set; }
+
+    private List<PageItem> pages = new();
+    private string fbUserId = "";
+    private string longLivedToken = "";
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string errorMessage = "";
+    private string saveError = "";
+    private string promoSet = "";
+
+    private bool allSelected => pages.Count > 0 && pages.All(p => p.IsSelected);
+    // เมื่อหน้าโหลดขึ้นมา จะตรวจสอบ session และ error จากการเชื่อมต่อ Facebook แล้วเรียก API เพื่อดึงข้อมูลเพจ
+
+    // ลบหรือวางทับของเดิมตั้งแต่บรรทัดนี้ลงมาคราฟน้า
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(FbError))
+        {
+            errorMessage = "การเชื่อมต่อ Facebook ถูกยกเลิก กรุณาลองใหม่";
+            isLoading = false;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(FbSession))
+        {
+            errorMessage = "ไม่พบ session กรุณา Login Facebook ใหม่";
+            isLoading = false;
+            return;
+        }
+
+        await LoadPages();
+    }
+
+    private async Task LoadPages()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+
+            // เรียก API เพื่อดึงข้อมูลเพจที่ผู้ใช้เป็นผู้ดูแลจริง ๆ จากระบบหลังบ้าน
+            var http = HttpFactory.CreateClient("BackendAPI");
+            var res = await http.GetAsync($"api/cnufacebook/GetFacebookPages?sessionKey={Uri.EscapeDataString(FbSession!)}");
+
+            // ตรวจสอบผลลัพธ์จาก API
+            if (res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadAsStringAsync();
+                var doc = System.Text.Json.JsonDocument.Parse(body);
+
+                fbUserId       = doc.RootElement.GetProperty("fbUserId").GetString() ?? "";
+                longLivedToken = doc.RootElement.TryGetProperty("longLivedToken", out var llt) ? llt.GetString() ?? "" : "";
+
+                pages = doc.RootElement
+                    .GetProperty("pages")
+                    .EnumerateArray()
+                    .Select(p => new PageItem
+                    {
+                        PageId = p.GetProperty("pageId").GetString() ?? "",
+                        PageName = p.GetProperty("pageName").GetString() ?? "",
+                        PictureUrl = p.TryGetProperty("pictureUrl", out var pic) ? pic.GetString() ?? "" : "",
+                        PageAccessToken = p.TryGetProperty("pageAccessToken", out var tok) ? tok.GetString() ?? "" : "",
+                        IsSelected = true // ตั้งให้ติ๊กถูกอัตโนมัติเมื่อโหลดเจอ
+                    })
+                    .ToList();
+            }
+            else
+            {
+                errorMessage = "Session หมดอายุ หรือหลังบ้านส่งข้อมูลผิดพลาด กรุณา Login Facebook ใหม่";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+    @*protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(FbError))
+        {
+            errorMessage = "การเชื่อมต่อ Facebook ถูกยกเลิก กรุณาลองใหม่";
+            isLoading = false;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(FbSession))
+        {
+            errorMessage = "ไม่พบ session กรุณา Login Facebook ใหม่";
+            isLoading = false;
+            return;
+        }
+
+        await LoadPages();
+    }
+    // ฟังก์ชันนี้จะเรียก API เพื่อดึงข้อมูลเพจที่ผู้ใช้เป็นผู้ดูแล และจัดเก็บไว้ในตัวแปร pages
+    private async Task LoadPages()
+    {
+        try
+        {
+            // เรียก API เพื่อดึงข้อมูลเพจที่ผู้ใช้เป็นผู้ดูแล
+            var http = HttpFactory.CreateClient("BackendAPI");
+            var res = await http.GetAsync($"api/cnufacebook/GetFacebookPages?sessionKey={Uri.EscapeDataString(FbSession!)}");
+
+            // ตรวจสอบผลลัพธ์จาก API
+            if (res.IsSuccessStatusCode)
+            {
+                var body = await res.Content.ReadAsStringAsync();
+                var doc = System.Text.Json.JsonDocument.Parse(body);
+
+                fbUserId      = doc.RootElement.GetProperty("fbUserId").GetString() ?? "";// เก็บ fbUserId ไว้ใช้ตอน redirect ไปหน้า Dashboard
+                longLivedToken = doc.RootElement.TryGetProperty("longLivedToken", out var llt) ? llt.GetString() ?? "" : "";
+
+                pages = doc.RootElement
+                    .GetProperty("pages")
+                    .EnumerateArray()
+                    .Select(p => new PageItem
+                    {
+                        PageId = p.GetProperty("pageId").GetString() ?? "",
+                        PageName = p.GetProperty("pageName").GetString() ?? "",
+                        PictureUrl = p.TryGetProperty("pictureUrl", out var pic) ? pic.GetString() ?? "" : "",
+                        PageAccessToken = p.TryGetProperty("pageAccessToken", out var tok) ? tok.GetString() ?? "" : "",
+                        IsSelected = true
+                    })
+                    .ToList();
+            }
+            else
+            {
+                errorMessage = "Session หมดอายุ กรุณา Login Facebook ใหม่";
+            }
+        }
+        catch
+        {
+            errorMessage = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }*@
+    // "เลือกทั้งหมด" ครั้งเดียว แทนที่จะต้องติ๊กทีละข้อ
+    private void ToggleAll(ChangeEventArgs e)
+    {
+        bool val = (bool)(e.Value ?? false);// รับค่าจาก checkbox ว่า "เลือกทั้งหมด" ถูกติ๊กหรือไม่
+        foreach (var p in pages) p.IsSelected = val;// ถ้า "เลือกทั้งหมด" ถูกติ๊ก ก็ให้ทุกเพจถูกติ๊กด้วย ถ้าไม่ถูกติ๊ก ก็ให้ทุกเพจไม่ถูกติ๊ก
+    }
+
+    private async Task SavePages()
+    {
+        // ตรวจสอบว่ามีการเลือกเพจที่ติ้ก
+        var selected = pages.Where(p => p.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        isSaving = true;
+        saveError = "";
+        StateHasChanged();
+
+        try
+        {
+            var http = HttpFactory.CreateClient("CnuConnectAPI");
+
+            var payload = selected.Select(page => new
+            {
+                AccessToken     = page.PageAccessToken,
+                LongLivedToken  = longLivedToken,
+                PageId          = page.PageId,
+                PageName        = page.PageName,
+                CreateUserID    = "3"
+            }).ToList();
+
+            var json    = System.Text.Json.JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+            var res = await http.PostAsync("api/ApiFacebookCnu/OnInsertFacebookToken", content);
+
+            if (res.IsSuccessStatusCode)
+            {
+                Nav.NavigateTo($"/dashboard?fbUserId={Uri.UnescapeDataString(fbUserId)}");
+                return;
+            }
+
+            var errBody = await res.Content.ReadAsStringAsync();
+            string errText = "";
+            try { errText = System.Text.Json.JsonSerializer.Deserialize<string>(errBody) ?? errBody; }
+            catch { errText = errBody; }
+
+            if (errText.Contains("มีข้อมูลอยู่แล้ว") || errText.Contains("PageID"))
+            {
+                Nav.NavigateTo($"/dashboard?fbUserId={Uri.UnescapeDataString(fbUserId)}");
+                return;
+            }
+
+            saveError = $"บันทึกไม่สำเร็จ: {errText}";
+        }
+        catch
+        {
+            saveError = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void TestPages()
+{
+        Nav.NavigateTo($"/dashboard?fbUserId={Uri.EscapeDataString(fbUserId)}");
+}
+
+    // คลาสช่วยเก็บข้อมูลเพจที่ดึงมาจาก API
+    private class PageItem
+    {
+        public string PageId { get; set; } = "";
+        public string PageName { get; set; } = "";
+        public string PictureUrl { get; set; } = "";
+        public string PageAccessToken { get; set; } = "";
+        public bool IsSelected { get; set; }
+    }
+}
