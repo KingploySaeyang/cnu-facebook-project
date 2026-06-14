@@ -5,7 +5,7 @@ RUN dotnet restore "CnuFacebookAPI.csproj"
 COPY . .
 RUN dotnet publish "CnuFacebookAPI.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 EXPOSE 8080
